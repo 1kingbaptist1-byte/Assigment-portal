@@ -4,41 +4,40 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="referrer" content="no-referrer">
-<title>System_Diagnostics_v7</title>
+<title>System_Diagnostics_v9</title>
 <style>
-:root { --v: #050505; --g: #00ff41; --t: #333; }
-body { background: var(--v); color: var(--t); font-family: 'Courier New', monospace; margin: 0; padding: 15px; }
+:root { --v: #050505; --g: #00ff41; --t: #222; }
+body { background: var(--v); color: var(--t); font-family: 'Courier New', monospace; margin: 0; padding: 15px; overflow-x: hidden; }
 
-/* The Ghost Interface */
 .wrapper { max-width: 850px; margin: auto; }
 .log-txt { font-size: 10px; color: #111; margin-bottom: 20px; }
 
+/* Stealth Input */
 .phantom-input {
 background: transparent; border: none; border-bottom: 1px solid #111;
 color: #111; width: 100%; padding: 10px; outline: none; font-size: 14px;
 }
 .phantom-input:focus { color: var(--g); border-bottom: 1px solid var(--g); }
 
+/* Navigation/Tunnel Buttons */
+.tunnel-suite { display: flex; gap: 10px; margin-bottom: 20px; }
+.t-btn { background: #000; border: 1px solid #111; color: #333; font-size: 9px; padding: 5px 10px; cursor: pointer; border-radius: 4px; }
+.t-btn:hover { color: var(--g); border-color: var(--g); }
+
 .entry { margin-top: 25px; border-left: 1px solid #111; padding-left: 15px; }
 .entry a { color: #555; text-decoration: none; font-size: 14px; display: block; }
-.entry a:hover { color: var(--g); }
 
-/* Reader Mode Button */
-.read-btn {
-background: #111; color: #444; border: 1px solid #222;
-font-size: 10px; padding: 2px 8px; margin-top: 5px; cursor: pointer;
-border-radius: 3px;
-}
-.read-btn:hover { color: var(--g); border-color: var(--g); }
+.read-btn { background: #111; color: #444; border: 1px solid #222; font-size: 10px; padding: 2px 8px; margin-top: 5px; cursor: pointer; }
 
-/* Full-screen Reader Overlay */
-#reader-view {
+/* Full-Screen Tunnel (For Discord/Xbox) */
+#tunnel-view {
 display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-background: #000; color: #bbb; z-index: 10000; overflow-y: auto; padding: 40px;
-box-sizing: border-box; font-family: serif; line-height: 1.6;
+background: #000; z-index: 10000;
 }
-.close-reader { position: fixed; top: 10px; right: 10px; color: var(--g); cursor: pointer; font-family: monospace; }
+iframe { width: 100%; height: 100%; border: none; background: #000; }
+.close-tunnel { position: fixed; top: 10px; right: 20px; color: var(--g); cursor: pointer; z-index: 10001; background: #000; padding: 5px; border: 1px solid var(--g); font-size: 10px; }
 
+#reader-view { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #0a0a0a; color: #ccc; z-index: 10000; overflow-y: auto; padding: 40px; box-sizing: border-box; font-family: serif; line-height: 1.8; }
 #panic { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #fff; z-index: 20000; padding: 50px; color: black; font-family: sans-serif; }
 </style>
 </head>
@@ -46,27 +45,53 @@ box-sizing: border-box; font-family: serif; line-height: 1.6;
 
 <div id="panic">
 <h1>404 Not Found</h1>
-<p>The server was unable to complete your request. Please contact your system administrator.</p>
+<p>The system diagnostic tool has encountered a critical error.</p>
+</div>
+
+<div id="tunnel-view">
+<span class="close-tunnel" onclick="closeTunnel()">[TERMINATE_TUNNEL]</span>
+<iframe id="tunnel-frame" src=""></iframe>
 </div>
 
 <div id="reader-view">
-<span class="close-reader" onclick="closeReader()">[CLOSE_ENCRYPTED_VIEW]</span>
+<span class="close-tunnel" onclick="closeReader()">[ESC_VIEW]</span>
 <div id="reader-content"></div>
 </div>
 
 <div class="wrapper">
-<div class="log-txt">AUTH_LEVEL: GHOST | PKT_INSPECTION: BYPASSED | READ_MODE: READY</div>
+<div class="log-txt">TUNNEL_PROTO: v9 | X-CLOUD: READY | DISCORD_VOID: READY</div>
 
-<input type="text" id="i" class="phantom-input" placeholder=">> SYSTEM_QUERY" autocomplete="off">
+<div class="tunnel-suite">
+<button class="t-btn" onclick="openTunnel('https://discord.com/app')">INIT_DISCORD</button>
+<button class="t-btn" onclick="openTunnel('https://www.xbox.com/play')">INIT_XCLOUD</button>
+</div>
+
+<input type="text" id="i" class="phantom-input" placeholder=">> CRYPTO_QUERY" autocomplete="off">
 <div id="st" style="font-size: 9px; margin-top: 5px; color: #111;">STATUS: IDLE</div>
 <div id="out"></div>
 </div>
 
 <script>
-const p1 = "aHR0cHM6Ly9zZWFyeC5iZQ=="; // Node
-const b1 = "aHR0cHM6Ly9hcGkuYWxsb3JpZ2luLndpbi9nZXQ/dXJsPQ=="; // Bridge
+const p1 = "aHR0cHM6Ly9zZWFyeC5iZQ==";
+const b1 = "aHR0cHM6Ly9hcGkuYWxsb3JpZ2luLndpbi9nZXQ/dXJsPQ==";
 
 function d(s) { return atob(s); }
+
+// Tunnel Logic for High-Bandwidth Apps
+function openTunnel(url) {
+const view = document.getElementById('tunnel-view');
+const frame = document.getElementById('tunnel-frame');
+document.getElementById('st').innerText = "TUNNEL_OPEN: " + url;
+frame.src = url;
+view.style.display = "block";
+}
+
+function closeTunnel() {
+const view = document.getElementById('tunnel-view');
+const frame = document.getElementById('tunnel-frame');
+frame.src = ""; // Stop the stream immediately
+view.style.display = "none";
+}
 
 async function execute() {
 const q = document.getElementById('i').value;
@@ -88,44 +113,37 @@ const data = JSON.parse(j.contents);
 out.innerHTML = data.results.map(res => `
 <div class="entry">
 <a href="${res.url}" target="_blank">${res.title}</a>
-<button class="read-btn" onclick="openReader('${btoa(res.url)}')">OPEN IN GHOST_READER</button>
-<p>${res.content || ''}</p>
+<button class="read-btn" onclick="openReader('${btoa(res.url)}')">GHOST_READER</button>
 </div>
 `).join('');
 st.innerText = "STREAM_DECRYPTED";
-} catch(e) { st.innerText = "RETRYING_TUNNEL..."; execute(); }
+} catch(e) { st.innerText = "RECONNECTING..."; }
 }
 
 async function openReader(encUrl) {
 const url = atob(encUrl);
 const rContent = document.getElementById('reader-content');
-const rView = document.getElementById('reader-view');
-rView.style.display = "block";
-rContent.innerHTML = "FETCHING_AND_CLEANING_TEXT...";
+document.getElementById('reader-view').style.display = "block";
+rContent.innerHTML = "SCRUBBING_DOM...";
 
 try {
 const bridge = `${d(b1)}${encodeURIComponent(url)}`;
 const res = await fetch(bridge);
 const json = await res.json();
-
-// This is a simple parser to grab text without images/scripts
 const parser = new DOMParser();
 const doc = parser.parseFromString(json.contents, 'text/html');
-const mainText = doc.body.innerText.split('\n').filter(p => p.trim().length > 30).join('<br><br>');
-
-rContent.innerHTML = `<h2>${doc.title}</h2><hr>${mainText}`;
-} catch(e) { rContent.innerHTML = "ENCRYPTION_ERROR: SITE_BLOCKED_FOR_READER"; }
+rContent.innerHTML = `<h1>${doc.title}</h1><hr>${doc.body.innerText}`;
+} catch(e) { rContent.innerHTML = "FAIL: NODE_BLOCKED"; }
 }
 
 function closeReader() { document.getElementById('reader-view').style.display = "none"; }
 
 let taps = 0;
 function t(e) {
-if(e.clientX < 50 && e.clientY < 50) { taps++; if(taps === 3) document.getElementById('panic').style.display = "block"; }
+if(e.clientX < 40 && e.clientY < 40) { taps++; if(taps === 3) document.body.innerHTML = document.getElementById('panic').innerHTML; }
 }
 
-document.getElementById('i').onkeypress = (e) => { if(e.key === 'Enter') execute(); };
+document.getElementById('i').onkeypress = (e) => { if (e.key === 'Enter') execute(); };
 </script>
-
 </body>
 </html>
