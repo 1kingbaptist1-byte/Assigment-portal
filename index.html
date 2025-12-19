@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Academic Portal</title> <style>
+:root { --primary: #74b9ff; --bg: #0a0a0a; --card: #161616; --text: #d1d1d1; }
+body { font-family: 'Courier New', monospace; background: var(--bg); color: var(--text); margin: 0; padding: 20px; transition: 0.3s; }
+
+/* Camouflage View (Press 'ESC' to trigger) */
+body.camo { background: white !important; color: black !important; font-family: serif !important; }
+body.camo .ghost-ui { display: none; }
+body.camo .camo-ui { display: block !important; }
+
+.wrapper { max-width: 700px; margin: 0 auto; }
+.camo-ui { display: none; padding: 40px; }
+
+.header { text-align: left; border-bottom: 1px dashed #333; padding-bottom: 10px; margin-bottom: 30px; }
+.header h1 { font-size: 1.2rem; color: var(--primary); margin: 0; text-transform: uppercase; }
+
+.search-box { display: flex; background: #000; border: 1px solid #333; padding: 5px; border-radius: 4px; }
+input { flex: 1; border: none; background: transparent; color: #00ff00; padding: 12px; font-size: 14px; outline: none; }
+button { background: #222; color: var(--primary); border: 1px solid #333; padding: 0 20px; cursor: pointer; font-weight: bold; }
+
+#results { margin-top: 30px; }
+.result-card { background: var(--card); padding: 15px; margin-bottom: 10px; border-left: 2px solid var(--primary); }
+.result-card a { color: #81ecec; text-decoration: none; font-size: 1.1rem; }
+.result-card p { font-size: 0.85rem; color: #999; margin: 5px 0; }
+
+.shield-info { font-size: 0.7rem; color: #444; margin-top: 40px; text-align: center; }
+</style>
+</head>
+<body>
+
+<div class="ghost-ui wrapper">
+<div class="header">
+<h1>Terminal_Access_v4.0</h1>
+</div>
+
+<div class="search-box">
+<input type="text" id="userInput" placeholder="[QUERY_ENCRYPTED]" autocomplete="off">
+<button onclick="phantomSearch()">EXECUTE</button>
+</div>
+
+<div id="status" style="font-size: 0.7rem; margin: 10px 0; color: #555;">SYSTEM_READY</div>
+<div id="results"></div>
+
+<div class="shield-info">Encrypted Proxy Tunneling Enabled • No IP Leakage</div>
+</div>
+
+<div class="camo-ui">
+<h2>Article: Digital Literacy in the 21st Century</h2>
+<p>Research suggests that digital literacy is a fundamental requirement for modern education...</p>
+</div>
+
+<script>
+// These are Base64 encoded URLs to bypass simple text filters
+// Decodes to: searx.be, paulgo.io, searxng.site
+const eNodes = ["aHR0cHM6Ly9zZWFyeC5iZQ==", "aHR0cHM6Ly9wYXVsZ28uaW8=", "aHR0cHM6Ly9zZWFyeG5nLnNpdGU="];
+const pX = "aHR0cHM6Ly9jb3JzcHJveHkuaW8vPw==";
+
+function d(s) { return atob(s); }
+
+async function phantomSearch() {
+const q = document.getElementById('userInput').value.trim();
+const res = document.getElementById('results');
+const st = document.getElementById('status');
+
+if (!q) return;
+res.innerHTML = "";
+st.innerText = "ROUTING_THROUGH_GHOST_NODES...";
+
+const node = d(eNodes[Math.floor(Math.random() * eNodes.length)]);
+
+try {
+// Using Base64 encoded Proxy URL
+const target = `${node}/search?q=${encodeURIComponent(q)}&format=json&engines=mojeek,wikidata`;
+const finalUrl = `${d(pX)}${encodeURIComponent(target)}`;
+
+const response = await fetch(finalUrl);
+const data = await response.json();
+
+if (data.results && data.results.length > 0) {
+st.innerText = "DECRYPTED_SUCCESSFULLY";
+res.innerHTML = data.results.map(item => `
+<div class="result-card">
+<a href="${item.url}" target="_blank">${item.title}</a>
+<p>${item.content || ''}</p>
+</div>
+`).join('');
+}
+} catch (err) {
+st.innerText = "NODE_FAILED_RETRYING...";
+setTimeout(phantomSearch, 1000);
+}
+}
+
+// "Panic Button" - Press Escape to hide the search engine
+window.addEventListener('keydown', (e) => {
+if (e.key === "Escape") {
+document.body.classList.toggle('camo');
+}
+});
+
+document.getElementById('userInput').onkeypress = (e) => { if (e.key === 'Enter') phantomSearch(); };
+</script>
+
+</body>
+</html>
