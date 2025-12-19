@@ -4,88 +4,127 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="referrer" content="no-referrer">
-<title>Educational Portal</title>
+<title>System_Diagnostics_v7</title>
 <style>
-:root { --p: #55efc4; --bg: #000000; --c: #111; --t: #aaa; }
-body { font-family: monospace; background: var(--bg); color: var(--t); margin: 0; padding: 20px; }
-body.panic { background: #fff !important; color: #000 !important; font-family: serif !important; }
-body.panic .main-ui { display: none; }
-body.panic .fake-ui { display: block !important; padding: 50px; }
-.wrapper { max-width: 600px; margin: 0 auto; }
-.fake-ui { display: none; }
-.box { display: flex; border: 1px solid #333; background: #000; padding: 2px; border-radius: 8px; }
-input { flex: 1; border: none; background: transparent; color: var(--p); padding: 12px; outline: none; font-size: 16px; }
-button { background: #111; color: var(--p); border: 1px solid #333; padding: 0 15px; cursor: pointer; border-radius: 5px; }
-.res-box { margin-top: 25px; border-top: 1px solid #222; padding-top: 20px; }
-.item { background: #0a0a0a; padding: 15px; margin-bottom: 12px; border: 1px solid #1a1a1a; border-radius: 8px; }
-.item a { color: var(--p); text-decoration: none; font-weight: bold; font-size: 1.1rem; }
-.item p { font-size: 0.85rem; color: #777; margin-top: 8px; }
-.panic-btn { position: fixed; bottom: 10px; right: 10px; width: 10px; height: 10px; background: #111; border: none; cursor: pointer; }
+:root { --v: #050505; --g: #00ff41; --t: #333; }
+body { background: var(--v); color: var(--t); font-family: 'Courier New', monospace; margin: 0; padding: 15px; }
+
+/* The Ghost Interface */
+.wrapper { max-width: 850px; margin: auto; }
+.log-txt { font-size: 10px; color: #111; margin-bottom: 20px; }
+
+.phantom-input {
+background: transparent; border: none; border-bottom: 1px solid #111;
+color: #111; width: 100%; padding: 10px; outline: none; font-size: 14px;
+}
+.phantom-input:focus { color: var(--g); border-bottom: 1px solid var(--g); }
+
+.entry { margin-top: 25px; border-left: 1px solid #111; padding-left: 15px; }
+.entry a { color: #555; text-decoration: none; font-size: 14px; display: block; }
+.entry a:hover { color: var(--g); }
+
+/* Reader Mode Button */
+.read-btn {
+background: #111; color: #444; border: 1px solid #222;
+font-size: 10px; padding: 2px 8px; margin-top: 5px; cursor: pointer;
+border-radius: 3px;
+}
+.read-btn:hover { color: var(--g); border-color: var(--g); }
+
+/* Full-screen Reader Overlay */
+#reader-view {
+display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+background: #000; color: #bbb; z-index: 10000; overflow-y: auto; padding: 40px;
+box-sizing: border-box; font-family: serif; line-height: 1.6;
+}
+.close-reader { position: fixed; top: 10px; right: 10px; color: var(--g); cursor: pointer; font-family: monospace; }
+
+#panic { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #fff; z-index: 20000; padding: 50px; color: black; font-family: sans-serif; }
 </style>
 </head>
-<body>
+<body onclick="t(event)">
 
-<div class="main-ui wrapper">
-<div style="font-size: 0.6rem; color: #444; margin-bottom: 10px;">SECURE_TUNNEL: ACTIVE</div>
-<div class="box">
-<input type="text" id="q" placeholder="ENTER SECURE QUERY..." autocomplete="off">
-<button onclick="s()">RUN</button>
-</div>
-<div id="stat" style="font-size: 0.7rem; color: #555; margin: 10px 0;">IDLE</div>
-<div id="res" class="res-box"></div>
+<div id="panic">
+<h1>404 Not Found</h1>
+<p>The server was unable to complete your request. Please contact your system administrator.</p>
 </div>
 
-<div class="fake-ui">
-<h1>Research: Architectural History</h1>
-<p>Architecture is the art and technique of designing and building, as distinguished from the skills associated with construction.</p>
+<div id="reader-view">
+<span class="close-reader" onclick="closeReader()">[CLOSE_ENCRYPTED_VIEW]</span>
+<div id="reader-content"></div>
 </div>
 
-<button class="panic-btn" onclick="panic()"></button>
+<div class="wrapper">
+<div class="log-txt">AUTH_LEVEL: GHOST | PKT_INSPECTION: BYPASSED | READ_MODE: READY</div>
+
+<input type="text" id="i" class="phantom-input" placeholder=">> SYSTEM_QUERY" autocomplete="off">
+<div id="st" style="font-size: 9px; margin-top: 5px; color: #111;">STATUS: IDLE</div>
+<div id="out"></div>
+</div>
 
 <script>
-const n = ["aHR0cHM6Ly9zZWFyeC5iZQ==", "aHR0cHM6Ly9wYXVsZ28uaW8=", "aHR0cHM6Ly9zZWFyeG5nLnNpdGU="];
-const pList = ["aHR0cHM6Ly9jb3JzcHJveHkuaW8vPw==", "aHR0cHM6Ly9hcGkuYWxsb3JpZ2luLndpbi9nZXQ/dXJsPQ=="];
-let pIndex = 0;
+const p1 = "aHR0cHM6Ly9zZWFyeC5iZQ=="; // Node
+const b1 = "aHR0cHM6Ly9hcGkuYWxsb3JpZ2luLndpbi9nZXQ/dXJsPQ=="; // Bridge
 
-function d(x) { return atob(x); }
+function d(s) { return atob(s); }
 
-async function s() {
-const query = document.getElementById('q').value.trim();
-const rBox = document.getElementById('res');
-const status = document.getElementById('stat');
-if (!query) return;
+async function execute() {
+const q = document.getElementById('i').value;
+const out = document.getElementById('out');
+const st = document.getElementById('st');
+if(!q) return;
 
-rBox.innerHTML = "";
-status.innerText = `ROUTING_VIA_BRIDGE_${pIndex + 1}...`;
-const node = d(n[Math.floor(Math.random() * n.length)]);
-const currentProxy = d(pList[pIndex]);
+out.innerHTML = "";
+st.innerText = "FRAGMENTING_QUERY...";
+st.style.color = "#00ff41";
 
 try {
-const uri = `${node}/search?q=${encodeURIComponent(query)}&format=json&engines=mojeek,wikipedia`;
-let finalUrl = pIndex === 1 ? `${currentProxy}${encodeURIComponent(uri)}` : `${currentProxy}${uri}`;
+const t = `${d(p1)}/search?q=${encodeURIComponent(q)}&format=json&engines=mojeek,wikipedia`;
+const url = `${d(b1)}${encodeURIComponent(t)}`;
+const r = await fetch(url);
+const j = await r.json();
+const data = JSON.parse(j.contents);
 
-const response = await fetch(finalUrl);
-let data = await response.json();
-if (pIndex === 1) data = JSON.parse(data.contents);
-
-if (data.results && data.results.length > 0) {
-status.innerText = "ESTABLISHED";
-rBox.innerHTML = data.results.map(i => `
-<div class="item">
-<a href="${i.url}" target="_blank" rel="noopener noreferrer">${i.title}</a>
-<p>${i.content || 'Click to view.'}</p>
+out.innerHTML = data.results.map(res => `
+<div class="entry">
+<a href="${res.url}" target="_blank">${res.title}</a>
+<button class="read-btn" onclick="openReader('${btoa(res.url)}')">OPEN IN GHOST_READER</button>
+<p>${res.content || ''}</p>
 </div>
 `).join('');
-} else { throw new Error(); }
-} catch (e) {
-pIndex = (pIndex + 1) % pList.length;
-status.innerText = "RECONNECTING...";
-setTimeout(s, 500);
-}
+st.innerText = "STREAM_DECRYPTED";
+} catch(e) { st.innerText = "RETRYING_TUNNEL..."; execute(); }
 }
 
-function panic() { document.body.classList.toggle('panic'); }
-document.getElementById('q').onkeypress = (e) => { if (e.key === 'Enter') s(); };
+async function openReader(encUrl) {
+const url = atob(encUrl);
+const rContent = document.getElementById('reader-content');
+const rView = document.getElementById('reader-view');
+rView.style.display = "block";
+rContent.innerHTML = "FETCHING_AND_CLEANING_TEXT...";
+
+try {
+const bridge = `${d(b1)}${encodeURIComponent(url)}`;
+const res = await fetch(bridge);
+const json = await res.json();
+
+// This is a simple parser to grab text without images/scripts
+const parser = new DOMParser();
+const doc = parser.parseFromString(json.contents, 'text/html');
+const mainText = doc.body.innerText.split('\n').filter(p => p.trim().length > 30).join('<br><br>');
+
+rContent.innerHTML = `<h2>${doc.title}</h2><hr>${mainText}`;
+} catch(e) { rContent.innerHTML = "ENCRYPTION_ERROR: SITE_BLOCKED_FOR_READER"; }
+}
+
+function closeReader() { document.getElementById('reader-view').style.display = "none"; }
+
+let taps = 0;
+function t(e) {
+if(e.clientX < 50 && e.clientY < 50) { taps++; if(taps === 3) document.getElementById('panic').style.display = "block"; }
+}
+
+document.getElementById('i').onkeypress = (e) => { if(e.key === 'Enter') execute(); };
 </script>
 
 </body>
