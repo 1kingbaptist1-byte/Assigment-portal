@@ -3,63 +3,49 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="referrer" content="no-referrer"> <title>Educational Portal</title>
+<meta name="referrer" content="no-referrer">
+<title>Educational Portal</title>
 <style>
 :root { --p: #55efc4; --bg: #000000; --c: #111; --t: #aaa; }
 body { font-family: monospace; background: var(--bg); color: var(--t); margin: 0; padding: 20px; }
-
-/* Panic Mode Styling */
 body.panic { background: #fff !important; color: #000 !important; font-family: serif !important; }
 body.panic .main-ui { display: none; }
 body.panic .fake-ui { display: block !important; padding: 50px; }
-
 .wrapper { max-width: 600px; margin: 0 auto; }
 .fake-ui { display: none; }
-
 .box { display: flex; border: 1px solid #333; background: #000; padding: 2px; border-radius: 8px; }
 input { flex: 1; border: none; background: transparent; color: var(--p); padding: 12px; outline: none; font-size: 16px; }
 button { background: #111; color: var(--p); border: 1px solid #333; padding: 0 15px; cursor: pointer; border-radius: 5px; }
-
 .res-box { margin-top: 25px; border-top: 1px solid #222; padding-top: 20px; }
 .item { background: #0a0a0a; padding: 15px; margin-bottom: 12px; border: 1px solid #1a1a1a; border-radius: 8px; }
 .item a { color: var(--p); text-decoration: none; font-weight: bold; font-size: 1.1rem; }
 .item p { font-size: 0.85rem; color: #777; margin-top: 8px; }
-
-.ghost-status { font-size: 0.6rem; color: #444; margin-bottom: 10px; text-transform: uppercase; }
 .panic-btn { position: fixed; bottom: 10px; right: 10px; width: 10px; height: 10px; background: #111; border: none; cursor: pointer; }
 </style>
 </head>
 <body>
 
 <div class="main-ui wrapper">
-<div class="ghost-status">Secure Tunnel: Active | IP Mask: 100% | No-Trace: ON</div>
-
+<div style="font-size: 0.6rem; color: #444; margin-bottom: 10px;">SECURE_TUNNEL: ACTIVE</div>
 <div class="box">
 <input type="text" id="q" placeholder="ENTER SECURE QUERY..." autocomplete="off">
 <button onclick="s()">RUN</button>
 </div>
-
 <div id="stat" style="font-size: 0.7rem; color: #555; margin: 10px 0;">IDLE</div>
 <div id="res" class="res-box"></div>
 </div>
 
 <div class="fake-ui">
-<h1>The Impact of Modern Architecture</h1>
-<p>Architecture is both the process and the product of planning, designing, and constructing buildings...</p>
+<h1>Research: Architectural History</h1>
+<p>Architecture is the art and technique of designing and building, as distinguished from the skills associated with construction.</p>
 </div>
 
 <button class="panic-btn" onclick="panic()"></button>
 
 <script>
-// Triple-encoded keys to hide node addresses from network inspectors
-const n = [
-"aHR0cHM6Ly9zZWFyeC5iZQ==",
-"aHR0cHM6Ly9wYXVsZ28uaW8=",
-"aHR0cHM6Ly9zZWFyeG5nLnNpdGU=",
-"aHR0cHM6Ly9zZWFyeC53b3Jr"
-];
-// This is the proxy - hidden to prevent simple text blocks
-const pr = "aHR0cHM6Ly9jb3JzcHJveHkuaW8vPw==";
+const n = ["aHR0cHM6Ly9zZWFyeC5iZQ==", "aHR0cHM6Ly9wYXVsZ28uaW8=", "aHR0cHM6Ly9zZWFyeG5nLnNpdGU="];
+const pList = ["aHR0cHM6Ly9jb3JzcHJveHkuaW8vPw==", "aHR0cHM6Ly9hcGkuYWxsb3JpZ2luLndpbi9nZXQ/dXJsPQ=="];
+let pIndex = 0;
 
 function d(x) { return atob(x); }
 
@@ -67,56 +53,38 @@ async function s() {
 const query = document.getElementById('q').value.trim();
 const rBox = document.getElementById('res');
 const status = document.getElementById('stat');
-
 if (!query) return;
 
 rBox.innerHTML = "";
-status.innerText = "SCRUBBING_TRACKERS_AND_ROUTING...";
-
-// Shuffle nodes for better bypass
+status.innerText = `ROUTING_VIA_BRIDGE_${pIndex + 1}...`;
 const node = d(n[Math.floor(Math.random() * n.length)]);
+const currentProxy = d(pList[pIndex]);
 
 try {
-// No-log engine selection: Mojeek and Wikipedia (no Google/Bing/Brave)
-const uri = `${node}/search?q=${encodeURIComponent(query)}&format=json&engines=mojeek,wikipedia,wikidata&safesearch=1`;
-const final = `${d(pr)}${encodeURIComponent(uri)}`;
+const uri = `${node}/search?q=${encodeURIComponent(query)}&format=json&engines=mojeek,wikipedia`;
+let finalUrl = pIndex === 1 ? `${currentProxy}${encodeURIComponent(uri)}` : `${currentProxy}${uri}`;
 
-const response = await fetch(final, {
-method: 'GET',
-mode: 'cors',
-headers: { 'X-Requested-With': 'XMLHttpRequest' }
-});
-
-const data = await response.json();
+const response = await fetch(finalUrl);
+let data = await response.json();
+if (pIndex === 1) data = JSON.parse(data.contents);
 
 if (data.results && data.results.length > 0) {
-status.innerText = "DATA_STREAM_ESTABLISHED";
+status.innerText = "ESTABLISHED";
 rBox.innerHTML = data.results.map(i => `
 <div class="item">
 <a href="${i.url}" target="_blank" rel="noopener noreferrer">${i.title}</a>
-<p>${i.content || 'Secure content preview.'}</p>
+<p>${i.content || 'Click to view.'}</p>
 </div>
 `).join('');
-} else {
-status.innerText = "ZERO_RESULTS_FOUND_TRY_DIFFERENT_NODE";
-setTimeout(s, 500); // Quick retry with different node
-}
+} else { throw new Error(); }
 } catch (e) {
-status.innerText = "NETWORK_INTERFERENCE_DETECTED_RECONNECTING...";
-setTimeout(s, 1000);
+pIndex = (pIndex + 1) % pList.length;
+status.innerText = "RECONNECTING...";
+setTimeout(s, 500);
 }
 }
 
-// "Panic" mode: Tap the tiny black square in the bottom right corner
-function panic() {
-document.body.classList.toggle('panic');
-}
-
-// History scrubbing: Clears the input field after 30 seconds
-setInterval(() => {
-if (document.activeElement.id !== 'q') document.getElementById('q').value = '';
-}, 30000);
-
+function panic() { document.body.classList.toggle('panic'); }
 document.getElementById('q').onkeypress = (e) => { if (e.key === 'Enter') s(); };
 </script>
 
